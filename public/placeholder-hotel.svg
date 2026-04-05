@@ -1,0 +1,19 @@
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#f3f4f6"/>
+  <!-- Building -->
+  <rect x="140" y="120" width="120" height="110" rx="4" fill="#9ca3af"/>
+  <!-- Roof / pediment -->
+  <polygon points="130,120 200,70 270,120" fill="#9ca3af"/>
+  <!-- Door -->
+  <rect x="183" y="185" width="34" height="45" rx="3" fill="#f3f4f6"/>
+  <!-- Windows row 1 -->
+  <rect x="152" y="135" width="24" height="22" rx="2" fill="#f3f4f6"/>
+  <rect x="224" y="135" width="24" height="22" rx="2" fill="#f3f4f6"/>
+  <!-- Windows row 2 -->
+  <rect x="152" y="168" width="24" height="22" rx="2" fill="#f3f4f6"/>
+  <rect x="224" y="168" width="24" height="22" rx="2" fill="#f3f4f6"/>
+  <!-- Flag pole -->
+  <line x1="200" y1="70" x2="200" y2="48" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
+  <!-- Flag -->
+  <polygon points="200,48 220,55 200,62" fill="#9ca3af"/>
+</svg>
