@@ -304,45 +304,15 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
         setAllHotels(hotels.map((h) => ({ ...h })));
         setHotelsLoading(false);
 
-        // Fetch rates — start min-rates in parallel for fast "from $X" prices,
-        // then stream full rates for filters (board type, cancellation policy, etc.)
+        // Fetch rates directly — reliable single request
         if (checkin && checkout) {
-          const hotelIds = hotels.map((h) => h.id);
-
-          // Kick off min-rates immediately — much faster than full rates
-          const minRatesPromise = fetchMinRates(hotelIds).then((minMap) => {
-            if (cancelled || Object.keys(minMap).length === 0) return;
-            // Show min-rate prices while full rates are still loading
-            setAllHotels((prev) =>
-              prev.map((h) => {
-                if (h.lowestPrice != null) return h; // already has a full rate
-                const mr = minMap[h.id];
-                if (!mr) return h;
-                return {
-                  ...h,
-                  lowestPrice: mr.lowestPrice,
-                  displayCurrency: mr.displayCurrency,
-                };
-              })
-            );
-          });
-
           try {
-            await Promise.all([
-              minRatesPromise,
-              fetchRatesStreaming(hotels),
-            ]);
-          } catch {
-            if (!cancelled) {
-              try {
-                await fetchRatesFallback(hotels);
-              } catch (fallbackErr) {
-                // Rates failed entirely — show hotels without prices
-                console.error("Rates fetch failed:", fallbackErr);
-              }
-              setRatesLoading(false);
-            }
+            await fetchRatesFallback(hotels);
+          } catch (ratesErr) {
+            // Rates failed — hotels stay visible without prices
+            console.error("Rates fetch failed:", ratesErr);
           }
+          if (!cancelled) setRatesLoading(false);
         } else {
           setRatesLoading(false);
         }
