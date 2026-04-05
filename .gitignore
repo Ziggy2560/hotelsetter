@@ -2,3 +2,5 @@
 node_modules/
 .next/
 .superpowers/
+.vercel
+tsconfig.tsbuildinfo
