@@ -75,6 +75,56 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [sort, setSort] = useState("recommended");
 
+  // ── Rate helpers ─────────────────────────────────────────────────────────────
+  function buildRatesMap(
+    ratesData: RatesResponse
+  ): Record<string, { lowestPrice: number; displayCurrency: string; boardType: string; refundable: boolean }> {
+    const map: Record<string, { lowestPrice: number; displayCurrency: string; boardType: string; refundable: boolean }> = {};
+    for (const hotelRates of ratesData.data ?? []) {
+      let lowestPrice = Infinity;
+      let displayCurrency = "USD";
+      let boardType = "";
+      let refundable = false;
+
+      for (const roomType of hotelRates.roomTypes ?? []) {
+        const price = roomType.offerRetailRate?.amount;
+        if (price != null && price < lowestPrice) {
+          lowestPrice = price;
+          displayCurrency = roomType.offerRetailRate?.currency ?? "USD";
+          boardType = roomType.rates?.[0]?.boardType ?? "";
+          const tag = roomType.rates?.[0]?.cancellationPolicies?.refundableTag;
+          refundable = tag === "RFN";
+        }
+      }
+
+      if (lowestPrice < Infinity) {
+        map[hotelRates.hotelId] = { lowestPrice, displayCurrency, boardType, refundable };
+      }
+    }
+    return map;
+  }
+
+  function mergeHotelsWithRates(
+    hotels: HotelsResponse["data"],
+    ratesMap: Record<string, { lowestPrice: number; displayCurrency: string; boardType: string; refundable: boolean }>,
+    nightCount: number
+  ): HotelWithRate[] {
+    return hotels.map((h) => {
+      const rate = ratesMap[h.id];
+      if (!rate) return { ...h };
+      const perNight = nightCount > 0 ? Math.round(rate.lowestPrice / nightCount) : rate.lowestPrice;
+      return {
+        ...h,
+        lowestPrice: perNight,
+        totalPrice: rate.lowestPrice,
+        displayCurrency: rate.displayCurrency,
+        nights: nightCount,
+        boardType: rate.boardType,
+        refundable: rate.refundable,
+      };
+    });
+  }
+
   // ── Fetch hotels + rates ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!placeId && !destination) {
@@ -84,105 +134,153 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
 
     let cancelled = false;
 
+    const ratesBody = {
+      ...(placeId ? { placeId } : { cityName: destination }),
+      checkin,
+      checkout,
+      occupancies: [{ adults }],
+      currency: "USD",
+      guestNationality: "US",
+      includeHotelData: true,
+      limit: 200,
+      timeout: 15,
+    };
+
+    async function fetchHotels(): Promise<HotelsResponse> {
+      const hotelsUrl = placeId
+        ? `/api/hotels?placeId=${encodeURIComponent(placeId!)}&limit=200`
+        : `/api/hotels?cityName=${encodeURIComponent(destination ?? "")}&limit=200`;
+      const r = await fetch(hotelsUrl);
+      if (!r.ok) throw new Error("Failed to fetch hotels");
+      return r.json() as Promise<HotelsResponse>;
+    }
+
+    async function fetchRatesStreaming(
+      hotels: HotelsResponse["data"]
+    ): Promise<void> {
+      const response = await fetch("/api/rates/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(ratesBody),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error(`Stream request failed: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      // Accumulate rates across all SSE events
+      const accumulatedRatesMap: Record<string, { lowestPrice: number; displayCurrency: string; boardType: string; refundable: boolean }> = {};
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (cancelled) { reader.cancel(); break; }
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // SSE events are separated by double newline
+        const events = buffer.split("\n\n");
+        buffer = events.pop() ?? "";
+
+        for (const event of events) {
+          const dataLine = event
+            .split("\n")
+            .find((line) => line.startsWith("data: "));
+          if (!dataLine) continue;
+
+          const raw = dataLine.slice(6).trim();
+          if (raw === "[DONE]") {
+            if (!cancelled) setRatesLoading(false);
+            return;
+          }
+
+          try {
+            const parsed = JSON.parse(raw) as RatesResponse;
+            if (parsed?.data) {
+              // Merge new rates into accumulator
+              const incoming = buildRatesMap(parsed);
+              Object.assign(accumulatedRatesMap, incoming);
+
+              // Re-merge and update hotels state progressively
+              const merged = mergeHotelsWithRates(hotels, accumulatedRatesMap, nights);
+              merged.sort((a, b) => {
+                if (a.lowestPrice && !b.lowestPrice) return -1;
+                if (!a.lowestPrice && b.lowestPrice) return 1;
+                return 0;
+              });
+              if (!cancelled) setAllHotels(merged);
+            }
+          } catch {
+            // Malformed chunk — skip
+          }
+        }
+      }
+
+      if (!cancelled) setRatesLoading(false);
+    }
+
+    async function fetchRatesFallback(
+      hotels: HotelsResponse["data"]
+    ): Promise<void> {
+      const r = await fetch("/api/rates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(ratesBody),
+      });
+      if (!r.ok) throw new Error(`Rates fallback failed: ${r.status}`);
+      const ratesData = (await r.json()) as RatesResponse;
+      if (cancelled) return;
+
+      const ratesMap = buildRatesMap(ratesData);
+      const merged = mergeHotelsWithRates(hotels, ratesMap, nights);
+      merged.sort((a, b) => {
+        if (a.lowestPrice && !b.lowestPrice) return -1;
+        if (!a.lowestPrice && b.lowestPrice) return 1;
+        return 0;
+      });
+      setAllHotels(merged);
+    }
+
     async function fetchData() {
       setHotelsLoading(true);
       setRatesLoading(true);
       setError(null);
 
       try {
-        // If we have dates, fetch hotels + rates in parallel
-        // The rates API supports placeId directly — no need to fetch hotels first
-        const hotelsUrl = placeId
-          ? `/api/hotels?placeId=${encodeURIComponent(placeId)}&limit=200`
-          : `/api/hotels?cityName=${encodeURIComponent(destination ?? "")}&limit=200`;
-
-        const hotelsPromise = fetch(hotelsUrl).then(r => {
-          if (!r.ok) throw new Error("Failed to fetch hotels");
-          return r.json() as Promise<HotelsResponse>;
-        });
-
-        // Fire rates request in parallel if we have dates
-        const ratesPromise = (checkin && checkout)
-          ? fetch("/api/rates", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                ...(placeId ? { placeId } : { cityName: destination }),
-                checkin,
-                checkout,
-                occupancies: [{ adults }],
-                currency: "USD",
-                guestNationality: "US",
-                includeHotelData: true,
-                limit: 200,
-                timeout: 10,
-              }),
-            }).then(r => r.ok ? r.json() as Promise<RatesResponse> : null)
-          : Promise.resolve(null);
-
-        // Wait for both in parallel
-        const [hotelsData, ratesData] = await Promise.all([hotelsPromise, ratesPromise]);
+        // Fetch hotels first so we can show them immediately
+        const hotelsData = await fetchHotels();
         if (cancelled) return;
 
         const hotels = hotelsData.data ?? [];
 
-        // Build rates lookup
-        const ratesMap: Record<string, { lowestPrice: number; displayCurrency: string; boardType: string; refundable: boolean }> = {};
+        // Show hotels (without prices) right away
+        setAllHotels(hotels.map((h) => ({ ...h })));
+        setHotelsLoading(false);
 
-        if (ratesData?.data) {
-          for (const hotelRates of ratesData.data) {
-            let lowestPrice = Infinity;
-            let displayCurrency = "USD";
-            let boardType = "";
-            let refundable = false;
-
-            for (const roomType of hotelRates.roomTypes ?? []) {
-              const price = roomType.offerRetailRate?.amount;
-              if (price != null && price < lowestPrice) {
-                lowestPrice = price;
-                displayCurrency = roomType.offerRetailRate?.currency ?? "USD";
-                boardType = roomType.rates?.[0]?.boardType ?? "";
-                const tag = roomType.rates?.[0]?.cancellationPolicies?.refundableTag;
-                refundable = tag === "RFN";
+        // Fetch rates — try streaming first, fall back to non-streaming
+        if (checkin && checkout) {
+          try {
+            await fetchRatesStreaming(hotels);
+          } catch {
+            if (!cancelled) {
+              try {
+                await fetchRatesFallback(hotels);
+              } catch (fallbackErr) {
+                // Rates failed entirely — show hotels without prices
+                console.error("Rates fetch failed:", fallbackErr);
               }
-            }
-
-            if (lowestPrice < Infinity) {
-              ratesMap[hotelRates.hotelId] = { lowestPrice, displayCurrency, boardType, refundable };
+              setRatesLoading(false);
             }
           }
+        } else {
+          setRatesLoading(false);
         }
-
-        // Merge hotels + rates, hotels with prices first
-        const merged: HotelWithRate[] = hotels.map((h) => {
-          const rate = ratesMap[h.id];
-          if (!rate) return { ...h };
-          const perNight = nights > 0 ? Math.round(rate.lowestPrice / nights) : rate.lowestPrice;
-          return {
-            ...h,
-            lowestPrice: perNight,
-            totalPrice: rate.lowestPrice,
-            displayCurrency: rate.displayCurrency,
-            nights,
-            boardType: rate.boardType,
-            refundable: rate.refundable,
-          };
-        });
-
-        // Sort so hotels with prices appear first
-        merged.sort((a, b) => {
-          if (a.lowestPrice && !b.lowestPrice) return -1;
-          if (!a.lowestPrice && b.lowestPrice) return 1;
-          return 0;
-        });
-
-        setAllHotels(merged);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Something went wrong");
-        }
-      } finally {
-        if (!cancelled) {
           setHotelsLoading(false);
           setRatesLoading(false);
         }
