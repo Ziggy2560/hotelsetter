@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
-import { Outfit, Geist } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
-import { cn } from "@/lib/utils";
-
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -19,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)}>
+    <html lang="en" className={outfit.variable}>
       <body className="font-sans bg-surface text-text antialiased">
         {children}
       </body>
