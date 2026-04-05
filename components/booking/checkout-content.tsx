@@ -189,6 +189,7 @@ export function CheckoutContent({ searchParams }: CheckoutContentProps) {
                 <PaymentForm
                   onSubmit={handlePaymentSubmit}
                   isSubmitting={step === "submitting"}
+                  secretKey={prebookResponse?.secretKey}
                 />
                 {bookError && (
                   <div className="bg-red-50 border border-red-200 rounded-[16px] px-4 py-3 text-sm text-red-600">

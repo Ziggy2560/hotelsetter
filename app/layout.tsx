@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Footer from "@/components/layout/footer";
 
@@ -73,6 +74,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans bg-surface text-text antialiased">
         {children}
         <Footer />
+        <Script
+          src="https://payment-wrapper.liteapi.travel/dist/liteAPIPayment.js?v=a1"
+          strategy="lazyOnload"
+        />
+        <Script
+          src="https://components.liteapi.travel/v1.0/sdk.umd.js"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );
