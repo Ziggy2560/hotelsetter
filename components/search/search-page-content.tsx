@@ -637,6 +637,7 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
                         checkin={checkin ?? ""}
                         checkout={checkout ?? ""}
                         adults={adults}
+                        ratesLoading={ratesLoading}
                       />
                     ))}
                   </div>

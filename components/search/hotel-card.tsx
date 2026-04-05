@@ -19,9 +19,10 @@ interface HotelCardProps {
   checkin: string;
   checkout: string;
   adults: number;
+  ratesLoading?: boolean;
 }
 
-export function HotelCard({ hotel, checkin, checkout, adults }: HotelCardProps) {
+export function HotelCard({ hotel, checkin, checkout, adults, ratesLoading }: HotelCardProps) {
   const router = useRouter();
 
   function handleClick() {
@@ -156,8 +157,13 @@ export function HotelCard({ hotel, checkin, checkout, adults }: HotelCardProps) 
                   </p>
                 )}
               </>
+            ) : ratesLoading ? (
+              <div className="flex flex-col items-end gap-1.5">
+                <div className="h-7 w-16 bg-black/5 rounded-md animate-pulse" />
+                <div className="h-3 w-12 bg-black/5 rounded animate-pulse" />
+              </div>
             ) : (
-              <p className="text-sm text-text-muted">No availability</p>
+              <p className="text-sm text-text-faint">Check dates</p>
             )}
           </div>
         </div>
