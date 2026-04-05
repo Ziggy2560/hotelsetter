@@ -161,6 +161,44 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
       return r.json() as Promise<HotelsResponse>;
     }
 
+    async function fetchMinRates(
+      hotelIds: string[]
+    ): Promise<Record<string, { lowestPrice: number; displayCurrency: string }>> {
+      if (!checkin || !checkout || hotelIds.length === 0) return {};
+      try {
+        const r = await fetch("/api/min-rates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            hotelIds,
+            checkin,
+            checkout,
+            occupancies: [{ adults }],
+            currency: "USD",
+            guestNationality: "US",
+          }),
+        });
+        if (!r.ok) return {};
+        const json = await r.json() as {
+          data?: { hotelId: string; min?: { retailRate?: number }; currency?: string }[];
+        };
+        const map: Record<string, { lowestPrice: number; displayCurrency: string }> = {};
+        for (const item of json.data ?? []) {
+          const total = item.min?.retailRate;
+          if (total != null && total > 0) {
+            const perNight = nights > 0 ? Math.round(total / nights) : total;
+            map[item.hotelId] = {
+              lowestPrice: perNight,
+              displayCurrency: item.currency ?? "USD",
+            };
+          }
+        }
+        return map;
+      } catch {
+        return {};
+      }
+    }
+
     async function fetchRatesStreaming(
       hotels: HotelsResponse["data"]
     ): Promise<void> {
@@ -266,10 +304,34 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
         setAllHotels(hotels.map((h) => ({ ...h })));
         setHotelsLoading(false);
 
-        // Fetch rates — try streaming first, fall back to non-streaming
+        // Fetch rates — start min-rates in parallel for fast "from $X" prices,
+        // then stream full rates for filters (board type, cancellation policy, etc.)
         if (checkin && checkout) {
+          const hotelIds = hotels.map((h) => h.id);
+
+          // Kick off min-rates immediately — much faster than full rates
+          const minRatesPromise = fetchMinRates(hotelIds).then((minMap) => {
+            if (cancelled || Object.keys(minMap).length === 0) return;
+            // Show min-rate prices while full rates are still loading
+            setAllHotels((prev) =>
+              prev.map((h) => {
+                if (h.lowestPrice != null) return h; // already has a full rate
+                const mr = minMap[h.id];
+                if (!mr) return h;
+                return {
+                  ...h,
+                  lowestPrice: mr.lowestPrice,
+                  displayCurrency: mr.displayCurrency,
+                };
+              })
+            );
+          });
+
           try {
-            await fetchRatesStreaming(hotels);
+            await Promise.all([
+              minRatesPromise,
+              fetchRatesStreaming(hotels),
+            ]);
           } catch {
             if (!cancelled) {
               try {
