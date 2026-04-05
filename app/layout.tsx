@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
+import Footer from "@/components/layout/footer";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={outfit.variable}>
       <body className="font-sans bg-surface text-text antialiased">
         {children}
+        <Footer />
       </body>
     </html>
   );
