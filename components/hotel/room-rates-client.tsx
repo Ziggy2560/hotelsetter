@@ -72,6 +72,7 @@ export default function RoomRatesClient({
         occupancies: [{ adults: Number(adults), children: [] }],
         currency: "USD",
         guestNationality: "US",
+        roomMapping: true,
       }),
     })
       .then((res) => {

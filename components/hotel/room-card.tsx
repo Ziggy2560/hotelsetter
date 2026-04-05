@@ -78,6 +78,12 @@ export default function RoomCard({ roomType, checkin, checkout, isSelected, onSe
   const perks = (bestRate as unknown as Record<string, unknown>).perks as
     { name: string; amount: number }[] | undefined;
 
+  // Room mapping
+  const roomPhoto = bestRate.roomPhotos?.[0];
+  const bedType = bestRate.bedType;
+  const roomSize = bestRate.roomSize;
+  const roomAmenities = bestRate.roomAmenities ?? [];
+
   function handleSelect() {
     onSelect(roomType.offerId, roomName, bestRate, roomType);
   }
@@ -107,6 +113,16 @@ export default function RoomCard({ roomType, checkin, checkout, isSelected, onSe
       )}
 
       <div className="flex items-start justify-between gap-6">
+        {/* Room photo thumbnail */}
+        {roomPhoto && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={roomPhoto}
+            alt={roomName}
+            className="w-20 h-20 rounded-[10px] object-cover shrink-0 self-start"
+          />
+        )}
+
         {/* Room info */}
         <div className="flex-1 min-w-0">
           <h3 className="text-[16px] font-semibold text-text mb-2 leading-snug">
@@ -125,6 +141,27 @@ export default function RoomCard({ roomType, checkin, checkout, isSelected, onSe
                 {adultCount > 0 && childCount > 0
                   ? `${adultCount} adult${adultCount > 1 ? "s" : ""}, ${childCount} child${childCount > 1 ? "ren" : ""}`
                   : `Sleeps ${maxOccupancy}`}
+              </span>
+            )}
+
+            {/* Bed type */}
+            {bedType && (
+              <span className="flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 4v16M22 4v16M2 12h20M2 20h20M6 12V8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4" />
+                </svg>
+                {bedType}
+              </span>
+            )}
+
+            {/* Room size */}
+            {roomSize && (
+              <span className="flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <path d="M3 9h18M9 21V9" />
+                </svg>
+                {roomSize}
               </span>
             )}
 
@@ -174,6 +211,13 @@ export default function RoomCard({ roomType, checkin, checkout, isSelected, onSe
             {perks && perks.filter(p => p.name !== "Free cancellation").map((perk, i) => (
               <span key={i} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
                 {perk.name}
+              </span>
+            ))}
+
+            {/* Room amenities from room mapping */}
+            {roomAmenities.slice(0, 4).map((amenity, i) => (
+              <span key={i} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-50 text-text-muted border border-black/8">
+                {amenity}
               </span>
             ))}
           </div>

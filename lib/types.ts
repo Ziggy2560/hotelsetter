@@ -141,6 +141,12 @@ export interface Rate {
   };
   cancellationPolicies: CancellationPolicies;
   paymentTypes: string[];
+  // Room mapping fields (returned when roomMapping: true)
+  mappedRoomId?: string;
+  roomPhotos?: string[];
+  bedType?: string;
+  roomAmenities?: string[];
+  roomSize?: string;
 }
 
 export interface RoomType {

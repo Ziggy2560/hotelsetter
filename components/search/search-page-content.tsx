@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FiltersSidebar } from "./filters-sidebar";
 import { HotelCard, type HotelWithRate } from "./hotel-card";
 import { ActiveFilters } from "./active-filters";
 import { AiSearchBar } from "./ai-search-bar";
+import { MapView } from "./map-view";
 import type { FilterState } from "@/lib/types";
 import type { HotelsResponse, RatesResponse } from "@/lib/types";
 import { SORT_OPTIONS } from "@/lib/constants";
@@ -66,6 +68,9 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
   const { placeId, destination, checkin, checkout, adults: adultsStr } = searchParams;
   const adults = parseInt(adultsStr ?? "2", 10) || 2;
   const nights = checkin && checkout ? nightsBetween(checkin, checkout) : 1;
+
+  const router = useRouter();
+  const [view, setView] = useState<"list" | "map">("list");
 
   const [hotelsLoading, setHotelsLoading] = useState(true);
   const [ratesLoading, setRatesLoading] = useState(false);
@@ -144,6 +149,7 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
       includeHotelData: true,
       limit: 200,
       timeout: 15,
+      roomMapping: true,
     };
 
     async function fetchHotels(): Promise<HotelsResponse> {
@@ -463,8 +469,8 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
                 )}
               </div>
 
-              {/* Sort dropdown */}
-              <div className="flex items-center gap-2">
+              {/* Sort dropdown + List/Map toggle */}
+              <div className="flex items-center gap-3">
                 {ratesLoading && (
                   <span className="text-xs text-text-muted animate-pulse">
                     Loading prices…
@@ -485,65 +491,125 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
                     </option>
                   ))}
                 </select>
+
+                {/* List / Map toggle */}
+                <div className="flex gap-1 bg-white border border-border rounded-[10px] p-0.5">
+                  <button
+                    onClick={() => setView("list")}
+                    className={cn(
+                      "px-3 py-1.5 rounded-[8px] text-sm font-medium transition-colors duration-150",
+                      view === "list"
+                        ? "bg-brand text-white"
+                        : "text-text-muted hover:text-text"
+                    )}
+                  >
+                    List
+                  </button>
+                  <button
+                    onClick={() => setView("map")}
+                    className={cn(
+                      "px-3 py-1.5 rounded-[8px] text-sm font-medium transition-colors duration-150",
+                      view === "map"
+                        ? "bg-brand text-white"
+                        : "text-text-muted hover:text-text"
+                    )}
+                  >
+                    Map
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Active filter chips */}
-            {hasActiveFilters && (
+            {hasActiveFilters && view === "list" && (
               <div className="mb-4">
                 <ActiveFilters filters={filters} onChange={setFilters} />
               </div>
             )}
 
-            {/* Error state */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-[16px] p-6 text-center">
-                <p className="text-sm text-red-600 font-medium">{error}</p>
-              </div>
+            {/* Map view */}
+            {view === "map" && placeId && (
+              <MapView
+                placeId={placeId}
+                checkin={checkin}
+                checkout={checkout}
+                adults={adults}
+                onHotelClick={(hotelId) => {
+                  const params = new URLSearchParams();
+                  if (checkin) params.set("checkin", checkin);
+                  if (checkout) params.set("checkout", checkout);
+                  params.set("adults", String(adults));
+                  router.push(`/hotel/${hotelId}?${params.toString()}`);
+                }}
+              />
             )}
 
-            {/* Loading skeleton */}
-            {isLoading && !error && (
-              <div className="space-y-4">
-                {[0, 1, 2, 3].map((i) => (
-                  <SkeletonCard key={i} />
-                ))}
-              </div>
-            )}
-
-            {/* Empty state */}
-            {!isLoading && !error && sortedHotels.length === 0 && (
+            {/* Map view — no placeId fallback */}
+            {view === "map" && !placeId && (
               <div className="bg-white border border-border rounded-[20px] p-12 text-center">
                 <p className="text-lg font-semibold text-text mb-2">
-                  No hotels found matching your filters
+                  Map view unavailable
                 </p>
-                <p className="text-sm text-text-muted mb-6">
-                  Try adjusting your filters or search for a different destination.
+                <p className="text-sm text-text-muted">
+                  Select a destination from the search bar to enable map view.
                 </p>
-                {hasActiveFilters && (
-                  <button
-                    onClick={() => setFilters(DEFAULT_FILTERS)}
-                    className="bg-brand text-white text-sm font-semibold px-6 py-3 rounded-[12px] hover:opacity-90 transition-opacity"
-                  >
-                    Clear all filters
-                  </button>
-                )}
               </div>
             )}
 
-            {/* Hotel cards */}
-            {!isLoading && !error && sortedHotels.length > 0 && (
-              <div className="space-y-4">
-                {sortedHotels.map((hotel) => (
-                  <HotelCard
-                    key={hotel.id}
-                    hotel={hotel}
-                    checkin={checkin ?? ""}
-                    checkout={checkout ?? ""}
-                    adults={adults}
-                  />
-                ))}
-              </div>
+            {/* List view content */}
+            {view === "list" && (
+              <>
+                {/* Error state */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-[16px] p-6 text-center">
+                    <p className="text-sm text-red-600 font-medium">{error}</p>
+                  </div>
+                )}
+
+                {/* Loading skeleton */}
+                {isLoading && !error && (
+                  <div className="space-y-4">
+                    {[0, 1, 2, 3].map((i) => (
+                      <SkeletonCard key={i} />
+                    ))}
+                  </div>
+                )}
+
+                {/* Empty state */}
+                {!isLoading && !error && sortedHotels.length === 0 && (
+                  <div className="bg-white border border-border rounded-[20px] p-12 text-center">
+                    <p className="text-lg font-semibold text-text mb-2">
+                      No hotels found matching your filters
+                    </p>
+                    <p className="text-sm text-text-muted mb-6">
+                      Try adjusting your filters or search for a different destination.
+                    </p>
+                    {hasActiveFilters && (
+                      <button
+                        onClick={() => setFilters(DEFAULT_FILTERS)}
+                        className="bg-brand text-white text-sm font-semibold px-6 py-3 rounded-[12px] hover:opacity-90 transition-opacity"
+                      >
+                        Clear all filters
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Hotel cards */}
+                {!isLoading && !error && sortedHotels.length > 0 && (
+                  <div className="space-y-4">
+                    {sortedHotels.map((hotel) => (
+                      <HotelCard
+                        key={hotel.id}
+                        hotel={hotel}
+                        checkin={checkin ?? ""}
+                        checkout={checkout ?? ""}
+                        adults={adults}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
