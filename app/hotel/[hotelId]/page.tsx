@@ -20,7 +20,7 @@ export async function generateMetadata({
     const hotel = response.data;
     return {
       title: `${hotel.name} — HotelSetter`,
-      description: hotel.hotelDescription?.slice(0, 160),
+      description: hotel.hotelDescription?.replace(/<[^>]*>/g, "").slice(0, 160),
     };
   } catch {
     return {
@@ -108,9 +108,10 @@ export default async function HotelDetailPage({
             {hotel.hotelDescription && (
               <section>
                 <h2 className="text-xl font-bold text-text mb-3">About this hotel</h2>
-                <p className="text-text-muted text-sm leading-relaxed whitespace-pre-line">
-                  {hotel.hotelDescription}
-                </p>
+                <div
+                  className="text-text-muted text-sm leading-relaxed prose prose-sm max-w-none [&_strong]:text-text [&_strong]:font-semibold [&_p]:mb-3 [&_br]:leading-loose"
+                  dangerouslySetInnerHTML={{ __html: hotel.hotelDescription }}
+                />
               </section>
             )}
 
