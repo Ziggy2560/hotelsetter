@@ -173,6 +173,26 @@ export async function prebook(body: {
   return res.json() as Promise<PrebookResponse>;
 }
 
+// ─── Min-Rates ────────────────────────────────────────────────────────────────
+
+export async function getMinRates(body: {
+  hotelIds: string[];
+  checkin: string;
+  checkout: string;
+  occupancies: { adults: number; children?: number[] }[];
+  currency: string;
+  guestNationality: string;
+}) {
+  const url = `${DATA_BASE_URL}/hotels/min-rates`;
+  const res = await fetchWithRetry(url, {
+    method: "POST",
+    headers: defaultHeaders(),
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`Min-rates API error: ${res.status}`);
+  return res.json();
+}
+
 // ─── Book ─────────────────────────────────────────────────────────────────────
 
 export async function book(body: BookRequest): Promise<BookResponse> {
