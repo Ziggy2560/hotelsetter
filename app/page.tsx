@@ -1,7 +1,17 @@
+import Navbar from "@/components/layout/navbar";
+import { Hero } from "@/components/home/hero";
+import { PopularDestinations } from "@/components/home/popular-destinations";
+import { WhySection } from "@/components/home/why-section";
+import { CTABanner } from "@/components/home/cta-banner";
+
 export default function Home() {
   return (
-    <main className="min-h-[100dvh] flex items-center justify-center">
-      <h1 className="text-4xl font-bold tracking-tight">HotelSetter</h1>
-    </main>
+    <>
+      <Navbar variant="transparent" />
+      <Hero />
+      <PopularDestinations />
+      <WhySection />
+      <CTABanner />
+    </>
   );
 }
