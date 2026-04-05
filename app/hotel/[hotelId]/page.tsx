@@ -131,9 +131,6 @@ export default async function HotelDetailPage({
             {hotel.hotelFacilities && hotel.hotelFacilities.length > 0 && (
               <AmenitiesGrid facilities={hotel.hotelFacilities} />
             )}
-
-            {/* Reviews */}
-            <ReviewsSection reviews={reviews} />
           </div>
 
           {/* ── Right column: placeholder — sidebar rendered in RoomRatesClient ── */}
@@ -155,6 +152,11 @@ export default async function HotelDetailPage({
               adults={adults}
             />
           </div>
+        </div>
+
+        {/* Reviews — below rooms so pricing is visible first */}
+        <div className="mt-10 max-w-[calc(100%-420px)]">
+          <ReviewsSection reviews={reviews} />
         </div>
       </main>
     </div>

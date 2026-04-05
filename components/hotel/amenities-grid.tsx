@@ -1,3 +1,7 @@
+"use client";
+
+import React from "react";
+
 interface AmenitiesGridProps {
   facilities: string[];
 }
@@ -182,11 +186,25 @@ function getAmenityIcon(label: string): React.ReactNode {
 export default function AmenitiesGrid({ facilities }: AmenitiesGridProps) {
   if (!facilities || facilities.length === 0) return null;
 
+  const MAX_VISIBLE = 8;
+
   return (
     <section>
       <h2 className="text-xl font-bold text-text mb-4">Amenities</h2>
+      <AmenitiesToggle facilities={facilities} maxVisible={MAX_VISIBLE} />
+    </section>
+  );
+}
+
+function AmenitiesToggle({ facilities, maxVisible }: { facilities: string[]; maxVisible: number }) {
+  const [showAll, setShowAll] = React.useState(false);
+  const visible = showAll ? facilities : facilities.slice(0, maxVisible);
+  const remaining = facilities.length - maxVisible;
+
+  return (
+    <>
       <div className="grid grid-cols-2 gap-3">
-        {facilities.map((facility, i) => (
+        {visible.map((facility, i) => (
           <div key={i} className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-[10px] bg-brand/8 border border-brand/15 flex items-center justify-center text-brand shrink-0">
               {getAmenityIcon(facility)}
@@ -195,6 +213,14 @@ export default function AmenitiesGrid({ facilities }: AmenitiesGridProps) {
           </div>
         ))}
       </div>
-    </section>
+      {remaining > 0 && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="mt-3 text-sm text-brand font-medium hover:underline"
+        >
+          {showAll ? "Show less" : `Show ${remaining} more`}
+        </button>
+      )}
+    </>
   );
 }

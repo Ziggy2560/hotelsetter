@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import type { Review } from "@/lib/types";
 import { getRatingLabel } from "@/lib/utils";
 
@@ -58,8 +61,21 @@ export default function ReviewsSection({ reviews }: ReviewsSectionProps) {
       </div>
 
       {/* Review list */}
+      <ReviewsList reviews={reviews} />
+    </section>
+  );
+}
+
+function ReviewsList({ reviews }: { reviews: Review[] }) {
+  const MAX_VISIBLE = 3;
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll ? reviews : reviews.slice(0, MAX_VISIBLE);
+  const remaining = reviews.length - MAX_VISIBLE;
+
+  return (
+    <>
       <div className="flex flex-col gap-4">
-        {reviews.map((review, i) => (
+        {visible.map((review, i) => (
           <article
             key={i}
             className="bg-white border border-border rounded-[16px] p-5"
@@ -95,6 +111,14 @@ export default function ReviewsSection({ reviews }: ReviewsSectionProps) {
           </article>
         ))}
       </div>
-    </section>
+      {remaining > 0 && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="mt-4 text-sm text-brand font-medium hover:underline"
+        >
+          {showAll ? "Show less" : `Show ${remaining} more reviews`}
+        </button>
+      )}
+    </>
   );
 }
