@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export default function Footer() {
   return (
     <footer className="border-t border-border">
@@ -14,33 +12,8 @@ export default function Footer() {
           </span>
         </div>
 
-        {/* Nav links */}
-        <nav className="flex items-center gap-6">
-          <Link
-            href="/destinations"
-            className="text-sm text-text-muted hover:text-text transition-colors"
-          >
-            Destinations
-          </Link>
-          <Link
-            href="/about"
-            className="text-sm text-text-muted hover:text-text transition-colors"
-          >
-            About
-          </Link>
-          <Link
-            href="/privacy"
-            className="text-sm text-text-muted hover:text-text transition-colors"
-          >
-            Privacy
-          </Link>
-          <Link
-            href="/terms"
-            className="text-sm text-text-muted hover:text-text transition-colors"
-          >
-            Terms
-          </Link>
-        </nav>
+        {/* Copyright */}
+        <p className="text-xs text-text-faint">&copy; {new Date().getFullYear()} HotelSetter. All rights reserved.</p>
 
         {/* Domain */}
         <p className="text-sm text-text-muted">hotelsetter.com</p>

@@ -11,12 +11,6 @@ export function PopularDestinations() {
         {/* Header */}
         <div className="flex items-end justify-between mb-8">
           <h2 className="text-[32px] font-bold tracking-tight text-text">Popular destinations</h2>
-          <Link
-            href="/destinations"
-            className="text-[14px] font-medium text-brand hover:opacity-75 transition-opacity duration-300"
-          >
-            View all destinations
-          </Link>
         </div>
 
         {/* Asymmetric grid */}

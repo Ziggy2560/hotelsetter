@@ -33,36 +33,8 @@ export default function Navbar({ variant }: NavbarProps) {
           </span>
         </Link>
 
-        {/* Nav links */}
-        <nav className="flex items-center gap-6">
-          <Link
-            href="/destinations"
-            className={cn(
-              "text-sm font-medium transition-opacity hover:opacity-70",
-              variant === "transparent" ? "text-white/90" : "text-text-muted"
-            )}
-          >
-            Destinations
-          </Link>
-          <Link
-            href="/deals"
-            className={cn(
-              "text-sm font-medium transition-opacity hover:opacity-70",
-              variant === "transparent" ? "text-white/90" : "text-text-muted"
-            )}
-          >
-            Deals
-          </Link>
-          <Link
-            href="/about"
-            className={cn(
-              "text-sm font-medium transition-opacity hover:opacity-70",
-              variant === "transparent" ? "text-white/90" : "text-text-muted"
-            )}
-          >
-            About
-          </Link>
-        </nav>
+        {/* Spacer to keep logo left-aligned */}
+        <div />
       </div>
     </header>
   );
