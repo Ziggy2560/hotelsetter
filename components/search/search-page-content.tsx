@@ -296,10 +296,13 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
   const filteredHotels = useMemo(() => {
     let results = [...allHotels];
 
-    // Only show hotels with rates (if rates have been loaded)
+    // Only hide priceless hotels if we actually got some prices back
+    // (prevents clearing the entire list when rates API fails)
     if (!ratesLoading && checkin && checkout) {
-      // Keep hotels that either have a price or are still loading
-      results = results.filter((h) => h.lowestPrice != null && h.lowestPrice > 0);
+      const hasAnyPrices = results.some((h) => h.lowestPrice != null && h.lowestPrice > 0);
+      if (hasAnyPrices) {
+        results = results.filter((h) => h.lowestPrice != null && h.lowestPrice > 0);
+      }
     }
 
     // Price range
