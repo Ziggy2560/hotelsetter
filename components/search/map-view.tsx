@@ -12,24 +12,24 @@ interface MapViewProps {
 export function MapView({ placeId, checkin, checkout, adults, onHotelClick }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     if (initialized.current) return;
 
     let attempts = 0;
-    const maxAttempts = 20; // 10 seconds max wait
+    const maxAttempts = 20;
 
     const interval = setInterval(() => {
       attempts++;
 
-      // Check if SDK is loaded
       if (typeof window !== "undefined" && (window as any).LiteAPI) {
         clearInterval(interval);
         initialized.current = true;
 
         try {
-          (window as any).LiteAPI.init({});
+          (window as any).LiteAPI.init({ domain: "hotelsetter.nuitee.link" });
           (window as any).LiteAPI.Map.create({
             selector: "#hotel-map",
             placeId,
@@ -44,9 +44,11 @@ export function MapView({ placeId, checkin, checkout, adults, onHotelClick }: Ma
                 ? { checkin, checkout, adults: adults ?? 2 }
                 : undefined,
           });
+          setLoading(false);
         } catch (err) {
           console.error("Map widget init failed:", err);
           setError(true);
+          setLoading(false);
         }
         return;
       }
@@ -54,6 +56,7 @@ export function MapView({ placeId, checkin, checkout, adults, onHotelClick }: Ma
       if (attempts >= maxAttempts) {
         clearInterval(interval);
         setError(true);
+        setLoading(false);
       }
     }, 500);
 
@@ -78,7 +81,7 @@ export function MapView({ placeId, checkin, checkout, adults, onHotelClick }: Ma
         id="hotel-map"
         className="w-full h-[500px] rounded-[20px] border border-border overflow-hidden bg-white"
       />
-      {!initialized.current && (
+      {loading && (
         <div className="absolute inset-0 flex items-center justify-center rounded-[20px] bg-white">
           <div className="flex flex-col items-center gap-2">
             <div className="w-8 h-8 border-2 border-brand border-t-transparent rounded-full animate-spin" />
