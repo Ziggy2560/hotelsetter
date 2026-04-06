@@ -78,10 +78,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           src="https://payment-wrapper.liteapi.travel/dist/liteAPIPayment.js?v=a1"
           strategy="lazyOnload"
         />
-        <Script
-          src="https://components.liteapi.travel/v1.0/sdk.umd.js"
-          strategy="afterInteractive"
-        />
       </body>
     </html>
   );
