@@ -167,7 +167,8 @@ export async function prebook(body: {
   });
 
   if (!res.ok) {
-    throw new Error(`prebook failed: ${res.status} ${res.statusText}`);
+    const text = await res.text().catch(() => "");
+    throw new Error(`prebook failed: ${res.status} ${res.statusText} — ${text}`);
   }
 
   return res.json() as Promise<PrebookResponse>;
@@ -204,7 +205,8 @@ export async function book(body: BookRequest): Promise<BookResponse> {
   });
 
   if (!res.ok) {
-    throw new Error(`book failed: ${res.status} ${res.statusText}`);
+    const text = await res.text().catch(() => "");
+    throw new Error(`book failed: ${res.status} ${res.statusText} — ${text}`);
   }
 
   return res.json() as Promise<BookResponse>;

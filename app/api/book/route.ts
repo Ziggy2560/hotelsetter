@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[api/book] error", { message, body });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
