@@ -183,7 +183,30 @@ export function ConfirmationContent() {
     );
   }
 
-  // success or idle (no tid, no bookingId — direct visit)
+  // No tid and no bookingId — user landed here without completing payment
+  if (status === "idle") {
+    return (
+      <div className="max-w-[640px] mx-auto flex flex-col items-center text-center">
+        <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mb-5">
+          <Warning size={32} weight="fill" className="text-amber-500" />
+        </div>
+        <h1 className="text-[24px] font-bold text-text mb-3 tracking-tight">
+          No booking found
+        </h1>
+        <p className="text-text-muted text-base mb-6 max-w-[440px]">
+          We couldn&apos;t find a completed booking on this page. If you were trying to book a hotel,
+          please start your search again.
+        </p>
+        <Link
+          href="/"
+          className="inline-flex items-center justify-center bg-brand text-white rounded-[14px] px-8 py-3.5 font-semibold text-sm hover:bg-brand-dark transition-colors"
+        >
+          Search hotels
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-[640px] mx-auto flex flex-col items-center text-center">
       <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mb-5">
