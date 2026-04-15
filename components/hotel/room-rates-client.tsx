@@ -70,8 +70,8 @@ export default function RoomRatesClient({
         checkin,
         checkout,
         occupancies: [{ adults: Number(adults), children: [] }],
-        currency: "USD",
-        guestNationality: "US",
+        currency: "AUD",
+        guestNationality: "AU",
         roomMapping: true,
       }),
     })

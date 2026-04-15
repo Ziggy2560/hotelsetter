@@ -24,7 +24,7 @@ export default function RoomCard({ roomType, checkin, checkout, isSelected, onSe
 
   const nights = checkin && checkout ? nightsBetween(checkin, checkout) : 1;
   const totalAmount = roomType.offerRetailRate?.amount ?? bestRate.retailRate?.total?.[0]?.amount ?? 0;
-  const currency = roomType.offerRetailRate?.currency ?? bestRate.retailRate?.total?.[0]?.currency ?? "USD";
+  const currency = roomType.offerRetailRate?.currency ?? bestRate.retailRate?.total?.[0]?.currency ?? "AUD";
   const pricePerNight = nights > 0 ? totalAmount / nights : totalAmount;
 
   // Comparison price (strikethrough)

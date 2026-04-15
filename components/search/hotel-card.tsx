@@ -148,12 +148,12 @@ export function HotelCard({ hotel, checkin, checkout, adults, ratesLoading }: Ho
             {hotel.lowestPrice != null && hotel.lowestPrice > 0 ? (
               <>
                 <p className="text-[26px] font-bold text-text leading-none">
-                  {formatCurrency(hotel.lowestPrice, hotel.displayCurrency ?? hotel.currency ?? "USD")}
+                  {formatCurrency(hotel.lowestPrice, hotel.displayCurrency ?? hotel.currency ?? "AUD")}
                 </p>
                 <p className="text-xs text-text-muted mt-0.5">per night</p>
                 {hotel.totalPrice != null && hotel.nights != null && hotel.nights > 1 && (
                   <p className="text-xs text-text-muted">
-                    {formatCurrency(hotel.totalPrice, hotel.displayCurrency ?? hotel.currency ?? "USD")} total
+                    {formatCurrency(hotel.totalPrice, hotel.displayCurrency ?? hotel.currency ?? "AUD")} total
                   </p>
                 )}
               </>

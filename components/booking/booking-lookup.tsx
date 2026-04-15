@@ -217,7 +217,7 @@ export function BookingLookup() {
               <div className="flex justify-between items-center text-sm font-bold pt-3.5 border-t border-border">
                 <span className="text-text">Total</span>
                 <span className="text-text text-base">
-                  {formatCurrency(booking.price, booking.currency ?? "USD")}
+                  {formatCurrency(booking.price, booking.currency ?? "AUD")}
                 </span>
               </div>
             )}

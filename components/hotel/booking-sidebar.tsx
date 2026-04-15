@@ -36,7 +36,7 @@ export default function BookingSidebar({
       ? selectedRoom.rate.retailRate.total[0].amount / Math.max(nights, 1)
       : null;
   const totalAmount = selectedRoom?.rate?.retailRate?.total?.[0]?.amount ?? null;
-  const currency = selectedRoom?.rate?.retailRate?.total?.[0]?.currency ?? "USD";
+  const currency = selectedRoom?.rate?.retailRate?.total?.[0]?.currency ?? "AUD";
   const taxesAndFees = selectedRoom?.rate?.retailRate?.taxesAndFees ?? [];
   const includedTax = taxesAndFees.find((t) => !t.included);
   const estimatedTax = includedTax?.amount ?? (totalAmount ? Math.round(totalAmount * 0.12) : null);

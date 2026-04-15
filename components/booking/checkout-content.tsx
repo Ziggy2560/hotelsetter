@@ -27,7 +27,7 @@ export function CheckoutContent({ searchParams }: CheckoutContentProps) {
     checkout = "",
     adults = "1",
     price = "0",
-    currency = "USD",
+    currency = "AUD",
     nights = "1",
   } = searchParams;
 

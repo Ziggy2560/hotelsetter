@@ -35,7 +35,7 @@ export function MapView({ placeId, checkin, checkout, adults, onHotelClick }: Ma
             placeId,
             primaryColor: "#007AFF",
             hideLogo: true,
-            currency: "USD",
+            currency: "AUD",
             onHotelClick: (hotelId: string) => {
               if (onHotelClick) onHotelClick(hotelId);
             },

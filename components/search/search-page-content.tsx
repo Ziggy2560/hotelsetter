@@ -86,7 +86,7 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
     const map: Record<string, { lowestPrice: number; displayCurrency: string; boardType: string; refundable: boolean }> = {};
     for (const hotelRates of ratesData.data ?? []) {
       let lowestPrice = Infinity;
-      let displayCurrency = "USD";
+      let displayCurrency = "AUD";
       let boardType = "";
       let refundable = false;
 
@@ -94,7 +94,7 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
         const price = roomType.offerRetailRate?.amount;
         if (price != null && price < lowestPrice) {
           lowestPrice = price;
-          displayCurrency = roomType.offerRetailRate?.currency ?? "USD";
+          displayCurrency = roomType.offerRetailRate?.currency ?? "AUD";
           boardType = roomType.rates?.[0]?.boardType ?? "";
           const tag = roomType.rates?.[0]?.cancellationPolicies?.refundableTag;
           refundable = tag === "RFN";
@@ -143,8 +143,8 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
       checkin,
       checkout,
       occupancies: [{ adults }],
-      currency: "USD",
-      guestNationality: "US",
+      currency: "AUD",
+      guestNationality: "AU",
       includeHotelData: true,
       limit: 200,
       timeout: 15,
@@ -173,8 +173,8 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
             checkin,
             checkout,
             occupancies: [{ adults }],
-            currency: "USD",
-            guestNationality: "US",
+            currency: "AUD",
+            guestNationality: "AU",
           }),
         });
         if (!r.ok) return {};
@@ -188,7 +188,7 @@ export function SearchPageContent({ searchParams }: SearchPageContentProps) {
             const perNight = nights > 0 ? Math.round(total / nights) : total;
             map[item.hotelId] = {
               lowestPrice: perNight,
-              displayCurrency: item.currency ?? "USD",
+              displayCurrency: item.currency ?? "AUD",
             };
           }
         }

@@ -51,7 +51,7 @@ export function ConfirmationContent() {
     checkin: searchParams.get("checkin") ?? "",
     checkout: searchParams.get("checkout") ?? "",
     price: parseFloat(searchParams.get("price") ?? "0") || 0,
-    currency: searchParams.get("currency") ?? "USD",
+    currency: searchParams.get("currency") ?? "AUD",
   });
 
   useEffect(() => {

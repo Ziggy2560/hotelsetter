@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
       checkin,
       checkout,
       occupancies,
-      currency: currency ?? "USD",
-      guestNationality: guestNationality ?? "US",
+      currency: currency ?? "AUD",
+      guestNationality: guestNationality ?? "AU",
     });
     return NextResponse.json(data);
   } catch (err) {
