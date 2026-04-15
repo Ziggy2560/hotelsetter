@@ -89,6 +89,27 @@ export function CheckoutContent({ searchParams }: CheckoutContentProps) {
   function handleGuestComplete(data: GuestData) {
     setGuestData(data);
     setStep("payment");
+
+    // Persist context so /booking/confirmation can finalize the booking after SDK redirects back
+    if (typeof window !== "undefined" && prebookResponse) {
+      const ctx = {
+        prebookId: prebookResponse.prebookId,
+        guest: data,
+        hotelId,
+        hotelName,
+        roomName,
+        checkin,
+        checkout,
+        price: prebookResponse.price ?? priceNum,
+        currency: prebookResponse.currency ?? currency,
+        specialRequests: "",
+      };
+      try {
+        window.sessionStorage.setItem("hs:bookingContext", JSON.stringify(ctx));
+      } catch {
+        // ignore
+      }
+    }
   }
 
   async function handlePaymentSubmit(_paymentData: PaymentData) {
@@ -190,6 +211,11 @@ export function CheckoutContent({ searchParams }: CheckoutContentProps) {
                   onSubmit={handlePaymentSubmit}
                   isSubmitting={step === "submitting"}
                   secretKey={prebookResponse?.secretKey}
+                  returnUrl={
+                    typeof window !== "undefined"
+                      ? `${window.location.origin}/booking/confirmation`
+                      : undefined
+                  }
                 />
                 {bookError && (
                   <div className="bg-red-50 border border-red-200 rounded-[16px] px-4 py-3 text-sm text-red-600">

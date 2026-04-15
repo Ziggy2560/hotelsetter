@@ -15,31 +15,30 @@ interface PaymentFormProps {
   onSubmit: (data: PaymentData) => void;
   isSubmitting?: boolean;
   secretKey?: string;
+  returnUrl?: string;
 }
 
 // ─── SDK-based payment form ───────────────────────────────────────────────────
 
 function SdkPaymentForm({
   secretKey,
+  returnUrl,
   specialRequests,
   onSpecialRequestsChange,
-  onSubmit,
-  isSubmitting,
 }: {
   secretKey: string;
+  returnUrl: string;
   specialRequests: string;
   onSpecialRequestsChange: (v: string) => void;
-  onSubmit: () => void;
-  isSubmitting: boolean;
 }) {
   const initialised = useRef(false);
+  const [sdkStatus, setSdkStatus] = useState<"loading" | "ready" | "failed">("loading");
 
   useEffect(() => {
     if (initialised.current || typeof window === "undefined") return;
 
-    // SDK may not be ready immediately — poll briefly then init
     let attempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 40; // ~10s
 
     const tryInit = () => {
       attempts++;
@@ -50,7 +49,7 @@ function SdkPaymentForm({
           publicKey: "live",
           secretKey,
           targetElement: "#liteapi-payment",
-          returnUrl: `${window.location.origin}/booking/confirmation`,
+          returnUrl,
           appearance: { theme: "flat" },
           options: { business: { name: "HotelSetter" } },
         };
@@ -58,16 +57,20 @@ function SdkPaymentForm({
           // @ts-expect-error - LiteAPIPayment loaded via external script
           const payment = new window.LiteAPIPayment(config);
           payment.handlePayment();
+          setSdkStatus("ready");
         } catch (err) {
           console.error("LiteAPIPayment init failed:", err);
+          setSdkStatus("failed");
         }
       } else if (attempts < maxAttempts) {
         setTimeout(tryInit, 250);
+      } else {
+        setSdkStatus("failed");
       }
     };
 
     tryInit();
-  }, [secretKey]);
+  }, [secretKey, returnUrl]);
 
   const inputClass = cn(
     "w-full border border-black/10 rounded-xl px-4 py-3.5 text-sm text-text bg-white",
@@ -84,10 +87,7 @@ function SdkPaymentForm({
         Your card details are collected securely by our payment provider.
       </p>
 
-      {/* LiteAPI SDK renders the card form here */}
-      <div id="liteapi-payment" className="mb-5 min-h-[180px]" />
-
-      {/* Special requests */}
+      {/* Special requests — captured BEFORE payment so it persists into sessionStorage for finalization */}
       <div className="mb-5">
         <label className={labelClass}>
           Special requests{" "}
@@ -102,15 +102,20 @@ function SdkPaymentForm({
         />
       </div>
 
-      <button
-        type="button"
-        onClick={onSubmit}
-        disabled={isSubmitting}
-        className="mt-1 w-full bg-brand text-white rounded-[16px] py-4 font-bold text-base hover:bg-brand-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-      >
-        {isSubmitting ? "Processing..." : "Confirm & pay"}
-      </button>
-      <p className="text-xs text-text-muted text-center mt-2">
+      {/* LiteAPI SDK renders the card form + its own pay button here */}
+      {sdkStatus === "loading" && (
+        <div className="text-sm text-text-muted py-6 text-center animate-pulse">
+          Loading secure payment form...
+        </div>
+      )}
+      {sdkStatus === "failed" && (
+        <div className="text-sm text-red-600 py-3 px-4 bg-red-50 border border-red-200 rounded-xl mb-3">
+          Payment form failed to load. Please refresh and try again.
+        </div>
+      )}
+      <div id="liteapi-payment" className="min-h-[180px]" />
+
+      <p className="text-xs text-text-muted text-center mt-4">
         By confirming, you agree to the hotel&apos;s cancellation policy and HotelSetter&apos;s terms of service.
       </p>
     </div>
@@ -279,27 +284,32 @@ function ManualPaymentForm({
 
 // ─── Exported component — SDK if secretKey available, else manual ─────────────
 
-export function PaymentForm({ onSubmit, isSubmitting = false, secretKey }: PaymentFormProps) {
+export function PaymentForm({ onSubmit, isSubmitting = false, secretKey, returnUrl }: PaymentFormProps) {
   const [specialRequests, setSpecialRequests] = useState("");
-  const [useSdk, setUseSdk] = useState(!!secretKey);
 
-  // If SDK init throws (e.g. script blocked), fall back to manual form
-  function handleSdkSubmit() {
-    try {
-      onSubmit({ nameOnCard: "", cardNumber: "", expiry: "", cvc: "", specialRequests });
-    } catch {
-      setUseSdk(false);
+  function handleSpecialRequestsChange(value: string) {
+    setSpecialRequests(value);
+    if (typeof window !== "undefined") {
+      try {
+        const raw = window.sessionStorage.getItem("hs:bookingContext");
+        if (raw) {
+          const ctx = JSON.parse(raw);
+          ctx.specialRequests = value;
+          window.sessionStorage.setItem("hs:bookingContext", JSON.stringify(ctx));
+        }
+      } catch {
+        // ignore
+      }
     }
   }
 
-  if (useSdk && secretKey) {
+  if (secretKey && returnUrl) {
     return (
       <SdkPaymentForm
         secretKey={secretKey}
+        returnUrl={returnUrl}
         specialRequests={specialRequests}
-        onSpecialRequestsChange={setSpecialRequests}
-        onSubmit={handleSdkSubmit}
-        isSubmitting={isSubmitting}
+        onSpecialRequestsChange={handleSpecialRequestsChange}
       />
     );
   }

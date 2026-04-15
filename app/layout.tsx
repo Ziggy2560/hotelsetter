@@ -76,7 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Footer />
         <Script
           src="https://payment-wrapper.liteapi.travel/dist/liteAPIPayment.js?v=a1"
-          strategy="lazyOnload"
+          strategy="afterInteractive"
         />
         <Script
           src="https://components.liteapi.travel/v1.0/sdk.umd.js"
